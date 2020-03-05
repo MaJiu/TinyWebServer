@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	clientlen = sizeof(clientaddr);
 	connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen); //line:netp:tiny:accept
         Getnameinfo((SA *) &clientaddr, clientlen, hostname, MAXLINE, 
-                    port, MAXLINE, 0);
+                    port, MAXLINE, NI_NUMERICHOST | NI_NUMERICSERV);
         printf("Accepted connection from (%s, %s)\n", hostname, port);
 	doit(connfd);                                             //line:netp:tiny:doit
 	Close(connfd);                                            //line:netp:tiny:close
