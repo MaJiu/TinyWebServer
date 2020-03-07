@@ -5,5 +5,5 @@
 * 2020年03月05日  
     修复一个BUG, 该BUG曾导致程序崩溃报错,Temporary failure in name resolution
 * 2020年03年07日  
-    在SIGCHLD处理程序中回收操作系统分配给CGI子程序的资源
+    在SIGCHLD处理程序中回收操作系统分配给CGI子程序的资源  
     实现 HEAD 请求
