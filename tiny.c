@@ -5,6 +5,10 @@
  *
  * Updated 11/2019 droh 
  *   - Fixed sprintf() aliasing issue in serve_static(), and clienterror().
+ *
+ * Updated 2020/03/07
+ *   - 优化子进程的回收, 在 SIG_ERR 信号处理程序中对子进程进行回收
+ *    MarkJ
  */
 #include "csapp.h"
 
@@ -16,6 +20,7 @@ void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, 
 		 char *shortmsg, char *longmsg);
+void reap_handler(int sig);
 
 int main(int argc, char **argv) 
 {
@@ -29,7 +34,8 @@ int main(int argc, char **argv)
 	fprintf(stderr, "usage: %s <port>\n", argv[0]);
 	exit(1);
     }
-
+    if (signal(SIGCHLD, reap_handler) == SIG_ERR)
+	    unix_error("signal error");
     listenfd = Open_listenfd(argv[1]);
     while (1) {
 	clientlen = sizeof(clientaddr);
@@ -211,7 +217,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
 	Dup2(fd, STDOUT_FILENO);         /* Redirect stdout to client */ //line:netp:servedynamic:dup2
 	Execve(filename, emptylist, environ); /* Run CGI program */ //line:netp:servedynamic:execve
     }
-    Wait(NULL); /* Parent waits for and reaps child */ //line:netp:servedynamic:wait
+    //Wait(NULL); /* Parent waits for and reaps child */ //line:netp:servedynamic:wait
 }
 /* $end serve_dynamic */
 
@@ -242,4 +248,16 @@ void clienterror(int fd, char *cause, char *errnum,
     sprintf(buf, "<hr><em>The Tiny Web server</em>\r\n");
     Rio_writen(fd, buf, strlen(buf));
 }
+
+void reap_handler(int sig)
+{
+	int olderrno = errno; //保存旧的的errno
+	while (waitpid(-1, NULL, 0) > 0) {
+		Sio_puts("reaped a chiled!\n");
+	}
+	if (errno != ECHILD)
+		sio_error("waitpid error!\n");
+	errno = olderrno;
+}
+		
 /* $end clienterror */
